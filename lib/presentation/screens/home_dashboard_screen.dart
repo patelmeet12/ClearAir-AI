@@ -174,7 +174,31 @@ class HomeDashboardScreen extends ConsumerWidget {
               const SizedBox(height: 12),
 
               // Routine items preview (top 3)
-              ...routineState.routines.take(3).map((routine) {
+              if (routineState.routines.isEmpty)
+                Card(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.auto_awesome, color: Color(0xFF0D9488)),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'Generate tailored morning, afternoon, and commute routines for today’s air quality.',
+                            style: TextStyle(fontSize: 13),
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => ref.read(routineProvider.notifier).generateRoutines(),
+                          child: const Text('Generate Routines'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                ...routineState.routines.take(3).map((routine) {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 10),
                   child: Padding(
@@ -470,6 +494,9 @@ class HomeDashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildFamilySafetyBanner(BuildContext context, householdProfile, AirQualityData data) {
+    final childrenText = householdProfile.children == 1 ? '1 child' : '${householdProfile.children} children';
+    final adultsText = householdProfile.olderAdults == 1 ? '1 older adult' : '${householdProfile.olderAdults} older adults';
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -492,7 +519,7 @@ class HomeDashboardScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Profile includes ${householdProfile.children} children and ${householdProfile.olderAdults} older adults. '
+                  'Profile includes $childrenText and $adultsText. '
                   '${householdProfile.vulnerability.advisory}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.35),
                 ),

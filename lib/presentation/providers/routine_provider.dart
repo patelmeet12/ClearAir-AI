@@ -54,6 +54,14 @@ class RoutineNotifier extends StateNotifier<RoutineState> {
   final Ref _ref;
 
   RoutineNotifier(this._ref) : super(const RoutineState(isLoading: true)) {
+    // Listen to air quality updates so routines are automatically generated
+    // as soon as air quality data finishes loading
+    _ref.listen<AirQualityState>(airQualityProvider, (previous, next) {
+      if (next.data != null && (previous?.data == null || state.routines.isEmpty)) {
+        generateRoutines();
+      }
+    });
+
     loadRoutines();
   }
 

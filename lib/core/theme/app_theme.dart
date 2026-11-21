@@ -38,11 +38,12 @@ class AppTheme {
       ),
       navigationRailTheme: const NavigationRailThemeData(
         backgroundColor: Colors.white,
-        selectedIconTheme: IconThemeData(color: AppColors.primaryTeal),
+        indicatorColor: AppColors.primaryTeal,
+        selectedIconTheme: IconThemeData(color: Colors.white),
         unselectedIconTheme: IconThemeData(color: AppColors.lightTextMuted),
         selectedLabelTextStyle: TextStyle(
           color: AppColors.primaryTeal,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.bold,
           fontSize: 12,
         ),
         unselectedLabelTextStyle: TextStyle(
@@ -130,11 +131,12 @@ class AppTheme {
       ),
       navigationRailTheme: const NavigationRailThemeData(
         backgroundColor: AppColors.navySurface,
-        selectedIconTheme: IconThemeData(color: AppColors.primaryTealLight),
+        indicatorColor: AppColors.primaryTeal,
+        selectedIconTheme: IconThemeData(color: Colors.white),
         unselectedIconTheme: IconThemeData(color: AppColors.darkTextMuted),
         selectedLabelTextStyle: TextStyle(
           color: AppColors.primaryTealLight,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.bold,
           fontSize: 12,
         ),
         unselectedLabelTextStyle: TextStyle(

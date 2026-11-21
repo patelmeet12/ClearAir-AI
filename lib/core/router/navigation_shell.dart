@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../presentation/providers/air_quality_provider.dart';
 import '../../presentation/providers/location_provider.dart';
+import '../../presentation/providers/settings_provider.dart';
 import '../../presentation/widgets/aqi_badge.dart';
 
 class NavigationShell extends ConsumerWidget {
@@ -34,6 +35,8 @@ class NavigationShell extends ConsumerWidget {
 
     final locationState = ref.watch(locationProvider);
     final aqiData = ref.watch(airQualityProvider).data;
+    final settings = ref.watch(settingsProvider);
+    final category = aqiData?.getCategory(settings.aqiStandard);
     final currentIndex = navigationShell.currentIndex;
 
     if (isMobile) {
@@ -52,8 +55,8 @@ class NavigationShell extends ConsumerWidget {
               const SizedBox(width: 8),
               const Text('ClearAir AI', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
               const Spacer(),
-              if (aqiData != null)
-                AqiBadge(category: aqiData.category),
+              if (category != null)
+                AqiBadge(category: category),
             ],
           ),
         ),
@@ -170,24 +173,24 @@ class NavigationShell extends ConsumerWidget {
                       child: const Icon(Icons.air, color: Colors.white, size: 22),
                     ),
             ),
-            trailing: isDesktop && aqiData != null
+            trailing: isDesktop && aqiData != null && category != null
                 ? Padding(
                     padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: aqiData.category.color.withValues(alpha: 0.1),
+                        color: category.color.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: aqiData.category.color.withValues(alpha: 0.3)),
+                        border: Border.all(color: category.color.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.location_on, size: 16, color: aqiData.category.color),
+                          Icon(Icons.location_on, size: 16, color: category.color),
                           const SizedBox(width: 6),
                           Text(
                             '${locationState.selectedLocation?.name ?? "Location"}: ${aqiData.aqi} AQI',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: aqiData.category.color),
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: category.color),
                           ),
                         ],
                       ),
