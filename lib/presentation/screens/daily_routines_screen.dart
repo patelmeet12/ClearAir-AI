@@ -153,23 +153,26 @@ class DailyRoutinesScreen extends ConsumerWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Checkbox(
-                  value: routine.isCompleted,
-                  onChanged: (val) async {
-                    final completed = val ?? false;
-                    await ref.read(routineProvider.notifier).toggleCompletion(routine.id, completed);
-                    if (completed && context.mounted) {
-                      final explainer = await ref.read(aiAssistantProvider.notifier).getImpactExplanation(
-                            actionTitle: routine.title,
-                            co2AvoidedKg: routine.co2AvoidedKg,
-                            fuelSavedLiters: routine.fuelSavedLiters,
-                            pm25PreventedGrams: (routine.co2AvoidedKg * 0.012),
-                          );
-                      if (context.mounted) {
-                        WhyThisMattersDialog.show(context, explainer);
+                Semantics(
+                  label: 'Mark routine "${routine.title}" as ${routine.isCompleted ? "incomplete" : "completed"}',
+                  child: Checkbox(
+                    value: routine.isCompleted,
+                    onChanged: (val) async {
+                      final completed = val ?? false;
+                      await ref.read(routineProvider.notifier).toggleCompletion(routine.id, completed);
+                      if (completed && context.mounted) {
+                        final explainer = await ref.read(aiAssistantProvider.notifier).getImpactExplanation(
+                              actionTitle: routine.title,
+                              co2AvoidedKg: routine.co2AvoidedKg,
+                              fuelSavedLiters: routine.fuelSavedLiters,
+                              pm25PreventedGrams: (routine.co2AvoidedKg * 0.012),
+                            );
+                        if (context.mounted) {
+                          WhyThisMattersDialog.show(context, explainer);
+                        }
                       }
-                    }
-                  },
+                    },
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(

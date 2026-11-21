@@ -40,6 +40,16 @@ class LocationRepositoryImpl implements LocationRepository {
     final locations = await getSavedLocations();
     final updated = locations.where((l) => l.id != id).toList();
     await _storage.setJsonList(_locationsKey, updated.map((e) => e.toJson()).toList());
+
+    // Clean up dangling default ID
+    final currentDefaultId = _storage.getString(_defaultIdKey);
+    if (currentDefaultId == id) {
+      if (updated.isNotEmpty) {
+        await _storage.setString(_defaultIdKey, updated.first.id);
+      } else {
+        await _storage.remove(_defaultIdKey);
+      }
+    }
   }
 
   @override

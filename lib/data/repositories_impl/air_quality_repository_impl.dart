@@ -25,8 +25,9 @@ class AirQualityRepositoryImpl implements AirQualityRepository {
       return DemoDataProvider.getDemoAirQuality(location);
     }
 
-    // Check cached data if not forcing refresh
     final cacheKey = 'aqi_cache_${location.latitude}_${location.longitude}';
+
+    // 1. Check cached data if not forcing refresh
     if (!forceRefresh) {
       final cachedJson = _storage.getJson(cacheKey);
       if (cachedJson != null) {
@@ -34,44 +35,38 @@ class AirQualityRepositoryImpl implements AirQualityRepository {
           final cachedData = AirQualityData.fromJson(cachedJson);
           // If cached within 30 minutes, reuse with cached badge
           if (DateTime.now().difference(cachedData.lastUpdated).inMinutes < 30) {
-            return AirQualityData(
-              locationName: cachedData.locationName,
-              latitude: cachedData.latitude,
-              longitude: cachedData.longitude,
-              aqi: cachedData.aqi,
-              category: cachedData.category,
-              pm25: cachedData.pm25,
-              pm10: cachedData.pm10,
-              no2: cachedData.no2,
-              so2: cachedData.so2,
-              co: cachedData.co,
-              o3: cachedData.o3,
-              temperatureC: cachedData.temperatureC,
-              humidityPercent: cachedData.humidityPercent,
-              windSpeedKmh: cachedData.windSpeedKmh,
-              weatherCode: cachedData.weatherCode,
+            return cachedData.copyWith(
               dataSourceType: DataSourceType.cached,
               dataSourceName: '${cachedData.dataSourceName} (Cached)',
-              lastUpdated: cachedData.lastUpdated,
-              hourlyForecast: cachedData.hourlyForecast,
             );
           }
-        } catch (_) {}
+        } catch (_) {
+          // Invalid cached format: proceed to fetch fresh
+        }
       }
     }
 
+    // 2. Fetch fresh live telemetry from network
     try {
       final fresh = await _api.fetchAirQuality(location);
-      await _storage.setJson(cacheKey, fresh.toJson());
+      if (fresh.dataSourceType == DataSourceType.live) {
+        await _storage.setJson(cacheKey, fresh.toJson());
+      }
       return fresh;
     } catch (_) {
-      // Return cached if available, else demo fallback
+      // 3. Fallback to offline cache if network call fails
       final cachedJson = _storage.getJson(cacheKey);
       if (cachedJson != null) {
         try {
-          return AirQualityData.fromJson(cachedJson);
+          final cachedData = AirQualityData.fromJson(cachedJson);
+          return cachedData.copyWith(
+            dataSourceType: DataSourceType.cached,
+            dataSourceName: '${cachedData.dataSourceName} (Offline Cache)',
+          );
         } catch (_) {}
       }
+
+      // 4. Final fallback to deterministic demo dataset if no cache exists
       return DemoDataProvider.getDemoAirQuality(location);
     }
   }
@@ -82,7 +77,10 @@ class AirQualityRepositoryImpl implements AirQualityRepository {
   }
 
   @override
-  Future<List<AirQualityData>> compareLocations(List<LocationItem> locations, {bool demoMode = false}) async {
+  Future<List<AirQualityData>> compareLocations(
+    List<LocationItem> locations, {
+    bool demoMode = false,
+  }) async {
     final List<AirQualityData> list = [];
     for (final loc in locations) {
       final data = await getAirQuality(loc, demoMode: demoMode);

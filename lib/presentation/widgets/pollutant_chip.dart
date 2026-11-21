@@ -23,7 +23,8 @@ class PollutantMetricCard extends StatelessWidget {
     final statusColor = isSafe ? const Color(0xFF10B981) : const Color(0xFFEF4444);
 
     return Semantics(
-      label: '$label ($formula): $value $unit, ${isSafe ? "Within guideline" : "Exceeds safe limit"}',
+      label: '$label ($formula): $value $unit, Limit: $safetyLimit. '
+          '${isSafe ? "Within healthy guideline" : "Exceeds safe exposure limit"}',
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
@@ -43,9 +44,12 @@ class PollutantMetricCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  formula,
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+                Flexible(
+                  child: Text(
+                    formula,
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 Container(
                   width: 8,
@@ -57,35 +61,39 @@ class PollutantMetricCard extends StatelessWidget {
                 ),
               ],
             ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Flexible(
-                  child: Text(
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
                     value,
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                const SizedBox(width: 3),
-                Text(
-                  unit,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  const SizedBox(width: 3),
+                  Text(
+                    unit,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
                   ),
-                ),
-              ],
-            ),
-            Text(
-              'Limit: $safetyLimit',
-              style: TextStyle(
-                fontSize: 9,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                ],
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            ),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Limit: $safetyLimit',
+                style: TextStyle(
+                  fontSize: 9,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+              ),
             ),
           ],
         ),

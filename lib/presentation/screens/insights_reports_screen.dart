@@ -83,63 +83,66 @@ class InsightsReportsScreen extends ConsumerWidget {
                     const SizedBox(height: 20),
                     SizedBox(
                       height: 220,
-                      child: LineChart(
-                        LineChartData(
-                          gridData: FlGridData(
-                            show: true,
-                            drawVerticalLine: false,
-                            getDrawingHorizontalLine: (value) => FlLine(color: Theme.of(context).dividerTheme.color ?? Colors.grey.shade300, strokeWidth: 1),
-                          ),
-                          titlesData: FlTitlesData(
-                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                interval: 1,
-                                getTitlesWidget: (val, meta) {
-                                  final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                                  final idx = val.toInt();
-                                  if (idx >= 0 && idx < days.length) {
-                                    return Padding(
-                                      padding: const EdgeInsets.only(top: 8),
-                                      child: Text(days[idx], style: const TextStyle(fontSize: 11)),
-                                    );
-                                  }
-                                  return const Text('');
-                                },
+                      child: Semantics(
+                        label: '7-day air quality trajectory chart. Weekly values range from AQI 140 on Saturday to a peak of 360 on Wednesday.',
+                        child: LineChart(
+                          LineChartData(
+                            gridData: FlGridData(
+                              show: true,
+                              drawVerticalLine: false,
+                              getDrawingHorizontalLine: (value) => FlLine(color: Theme.of(context).dividerTheme.color ?? Colors.grey.shade300, strokeWidth: 1),
+                            ),
+                            titlesData: FlTitlesData(
+                              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  interval: 1,
+                                  getTitlesWidget: (val, meta) {
+                                    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                                    final idx = val.toInt();
+                                    if (idx >= 0 && idx < days.length) {
+                                      return Padding(
+                                        padding: const EdgeInsets.only(top: 8),
+                                        child: Text(days[idx], style: const TextStyle(fontSize: 11)),
+                                      );
+                                    }
+                                    return const Text('');
+                                  },
+                                ),
+                              ),
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  reservedSize: 36,
+                                  interval: 100,
+                                  getTitlesWidget: (val, meta) => Text(val.toInt().toString(), style: const TextStyle(fontSize: 11)),
+                                ),
                               ),
                             ),
-                            leftTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                reservedSize: 36,
-                                interval: 100,
-                                getTitlesWidget: (val, meta) => Text(val.toInt().toString(), style: const TextStyle(fontSize: 11)),
+                            borderData: FlBorderData(show: false),
+                            minY: 0,
+                            maxY: 400,
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots: const [
+                                  FlSpot(0, 240),
+                                  FlSpot(1, 280),
+                                  FlSpot(2, 360),
+                                  FlSpot(3, 310),
+                                  FlSpot(4, 190),
+                                  FlSpot(5, 140),
+                                  FlSpot(6, 175),
+                                ],
+                                isCurved: true,
+                                color: const Color(0xFF0D9488),
+                                barWidth: 3,
+                                belowBarData: BarAreaData(show: true, color: const Color(0xFF0D9488).withValues(alpha: 0.15)),
+                                dotData: const FlDotData(show: true),
                               ),
-                            ),
+                            ],
                           ),
-                          borderData: FlBorderData(show: false),
-                          minY: 0,
-                          maxY: 400,
-                          lineBarsData: [
-                            LineChartBarData(
-                              spots: const [
-                                FlSpot(0, 240),
-                                FlSpot(1, 280),
-                                FlSpot(2, 360),
-                                FlSpot(3, 310),
-                                FlSpot(4, 190),
-                                FlSpot(5, 140),
-                                FlSpot(6, 175),
-                              ],
-                              isCurved: true,
-                              color: const Color(0xFF0D9488),
-                              barWidth: 3,
-                              belowBarData: BarAreaData(show: true, color: const Color(0xFF0D9488).withValues(alpha: 0.15)),
-                              dotData: const FlDotData(show: true),
-                            ),
-                          ],
                         ),
                       ),
                     ),

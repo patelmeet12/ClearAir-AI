@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -21,6 +22,17 @@ class _LiveAirQualityScreenState extends ConsumerState<LiveAirQualityScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<LocationItem> _searchResults = [];
   bool _isSearching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final locs = ref.read(locationProvider).savedLocations;
+      if (locs.isNotEmpty) {
+        ref.read(airQualityProvider.notifier).loadComparison(locs);
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -51,8 +63,16 @@ class _LiveAirQualityScreenState extends ConsumerState<LiveAirQualityScreen> {
   Widget build(BuildContext context) {
     final locationState = ref.watch(locationProvider);
     final aqiState = ref.watch(airQualityProvider);
+    final settings = ref.watch(settingsProvider);
     final currentLoc = locationState.selectedLocation;
     final aqiData = aqiState.data;
+
+    // Reactively refresh comparison list when saved locations change
+    ref.listen<LocationState>(locationProvider, (previous, next) {
+      if (previous?.savedLocations != next.savedLocations && next.savedLocations.isNotEmpty) {
+        ref.read(airQualityProvider.notifier).loadComparison(next.savedLocations);
+      }
+    });
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -101,6 +121,7 @@ class _LiveAirQualityScreenState extends ConsumerState<LiveAirQualityScreen> {
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
+                        tooltip: 'Clear search query',
                         onPressed: () {
                           _searchController.clear();
                           _performSearch('');
@@ -129,11 +150,8 @@ class _LiveAirQualityScreenState extends ConsumerState<LiveAirQualityScreen> {
                 margin: const EdgeInsets.only(top: 8, bottom: 16),
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.grey.shade300),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
-                  ],
                 ),
                 child: ListView.separated(
                   shrinkWrap: true,
@@ -145,42 +163,40 @@ class _LiveAirQualityScreenState extends ConsumerState<LiveAirQualityScreen> {
                     return ListTile(
                       leading: const Icon(Icons.location_on_outlined, color: Color(0xFF0D9488)),
                       title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text('${item.country} • Lat: ${item.latitude.toStringAsFixed(2)}, Lon: ${item.longitude.toStringAsFixed(2)}'),
+                      subtitle: Text('${item.country} (${item.latitude.toStringAsFixed(2)}°, ${item.longitude.toStringAsFixed(2)}°)'),
                       trailing: ElevatedButton(
-                        style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
                         onPressed: () {
                           ref.read(locationProvider.notifier).addOrUpdateLocation(item);
+                          ref.read(locationProvider.notifier).selectLocation(item);
                           setState(() {
                             _searchResults = [];
                             _searchController.clear();
                           });
                         },
-                        child: const Text('Save & Select'),
+                        child: const Text('Select'),
                       ),
                     );
                   },
                 ),
               ),
-
             const SizedBox(height: 16),
 
-            // Saved Locations Horizontal Chips / Tabs
+            // Saved Locations Quick Switch Chips
             Text(
-              'SAVED HOUSEHOLD & WORK LOCATIONS',
+              'SAVED MONITORING LOCATIONS',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     letterSpacing: 1.2,
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Wrap(
-              spacing: 10,
-              runSpacing: 10,
+              spacing: 8,
+              runSpacing: 8,
               children: locationState.savedLocations.map((loc) {
                 final isSelected = loc.id == currentLoc?.id;
-                return FilterChip(
-                  selected: isSelected,
+                return ChoiceChip(
                   label: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -189,19 +205,19 @@ class _LiveAirQualityScreenState extends ConsumerState<LiveAirQualityScreen> {
                             ? Icons.home
                             : loc.tag == LocationTag.workplace
                                 ? Icons.business
-                                : loc.tag == LocationTag.school
-                                    ? Icons.school
-                                    : Icons.place,
-                        size: 16,
+                                : Icons.school,
+                        size: 14,
+                        color: isSelected ? Colors.white : Theme.of(context).colorScheme.primary,
                       ),
                       const SizedBox(width: 6),
-                      Text('${loc.name} (${loc.tag.label})'),
+                      Text(loc.name),
                       if (loc.isDefault) ...[
                         const SizedBox(width: 4),
                         const Icon(Icons.star, size: 14, color: Colors.amber),
                       ],
                     ],
                   ),
+                  selected: isSelected,
                   onSelected: (val) {
                     ref.read(locationProvider.notifier).selectLocation(loc);
                   },
@@ -231,7 +247,7 @@ class _LiveAirQualityScreenState extends ConsumerState<LiveAirQualityScreen> {
                                     style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                                   ),
                                   const SizedBox(width: 10),
-                                  AqiBadge(category: aqiData.category),
+                                  AqiBadge(category: aqiData.getCategory(settings.aqiStandard)),
                                 ],
                               ),
                               const SizedBox(height: 4),
@@ -268,69 +284,74 @@ class _LiveAirQualityScreenState extends ConsumerState<LiveAirQualityScreen> {
                         height: 220,
                         child: aqiData.hourlyForecast.isEmpty
                             ? const Center(child: Text('No hourly forecast available'))
-                            : LineChart(
-                                LineChartData(
-                                  gridData: FlGridData(
-                                    show: true,
-                                    drawVerticalLine: false,
-                                    getDrawingHorizontalLine: (value) => FlLine(
-                                      color: Theme.of(context).dividerTheme.color ?? Colors.grey.shade300,
-                                      strokeWidth: 1,
-                                    ),
-                                  ),
-                                  titlesData: FlTitlesData(
-                                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                    bottomTitles: AxisTitles(
-                                      sideTitles: SideTitles(
-                                        showTitles: true,
-                                        interval: 4,
-                                        getTitlesWidget: (val, meta) {
-                                          final idx = val.toInt();
-                                          if (idx >= 0 && idx < aqiData.hourlyForecast.length) {
-                                            final t = aqiData.hourlyForecast[idx].time;
-                                            return Padding(
-                                              padding: const EdgeInsets.only(top: 8),
-                                              child: Text(
-                                                DateFormat('ha').format(t),
-                                                style: const TextStyle(fontSize: 11),
-                                              ),
-                                            );
-                                          }
-                                          return const Text('');
-                                        },
+                            : Semantics(
+                                label: '24-hour diurnal air quality forecast trajectory chart. '
+                                    'Peak forecast AQI: ${aqiData.hourlyForecast.map((e) => e.aqi).reduce(math.max)}, '
+                                    'Minimum AQI: ${aqiData.hourlyForecast.map((e) => e.aqi).reduce(math.min)}.',
+                                child: LineChart(
+                                  LineChartData(
+                                    gridData: FlGridData(
+                                      show: true,
+                                      drawVerticalLine: false,
+                                      getDrawingHorizontalLine: (value) => FlLine(
+                                        color: Theme.of(context).dividerTheme.color ?? Colors.grey.shade300,
+                                        strokeWidth: 1,
                                       ),
                                     ),
-                                    leftTitles: AxisTitles(
-                                      sideTitles: SideTitles(
-                                        showTitles: true,
-                                        reservedSize: 38,
-                                        interval: 100,
-                                        getTitlesWidget: (val, meta) => Text(
-                                          val.toInt().toString(),
-                                          style: const TextStyle(fontSize: 11),
+                                    titlesData: FlTitlesData(
+                                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                      bottomTitles: AxisTitles(
+                                        sideTitles: SideTitles(
+                                          showTitles: true,
+                                          interval: 4,
+                                          getTitlesWidget: (val, meta) {
+                                            final idx = val.toInt();
+                                            if (idx >= 0 && idx < aqiData.hourlyForecast.length) {
+                                              final t = aqiData.hourlyForecast[idx].time;
+                                              return Padding(
+                                                padding: const EdgeInsets.only(top: 8),
+                                                child: Text(
+                                                  DateFormat('ha').format(t),
+                                                  style: const TextStyle(fontSize: 11),
+                                                ),
+                                              );
+                                            }
+                                            return const Text('');
+                                          },
+                                        ),
+                                      ),
+                                      leftTitles: AxisTitles(
+                                        sideTitles: SideTitles(
+                                          showTitles: true,
+                                          reservedSize: 38,
+                                          interval: 100,
+                                          getTitlesWidget: (val, meta) => Text(
+                                            val.toInt().toString(),
+                                            style: const TextStyle(fontSize: 11),
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  borderData: FlBorderData(show: false),
-                                  minY: 0,
-                                  maxY: 500,
-                                  lineBarsData: [
-                                    LineChartBarData(
-                                      spots: aqiData.hourlyForecast.asMap().entries.map((e) {
-                                        return FlSpot(e.key.toDouble(), e.value.aqi.toDouble());
-                                      }).toList(),
-                                      isCurved: true,
-                                      color: aqiData.category.color,
-                                      barWidth: 3,
-                                      belowBarData: BarAreaData(
-                                        show: true,
-                                        color: aqiData.category.color.withValues(alpha: 0.15),
+                                    borderData: FlBorderData(show: false),
+                                    minY: 0,
+                                    maxY: 500,
+                                    lineBarsData: [
+                                      LineChartBarData(
+                                        spots: aqiData.hourlyForecast.asMap().entries.map((e) {
+                                          return FlSpot(e.key.toDouble(), e.value.aqi.toDouble());
+                                        }).toList(),
+                                        isCurved: true,
+                                        color: aqiData.getCategory(settings.aqiStandard).color,
+                                        barWidth: 3,
+                                        belowBarData: BarAreaData(
+                                          show: true,
+                                          color: aqiData.getCategory(settings.aqiStandard).color.withValues(alpha: 0.15),
+                                        ),
+                                        dotData: const FlDotData(show: false),
                                       ),
-                                      dotData: const FlDotData(show: false),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
                       ),
@@ -342,18 +363,44 @@ class _LiveAirQualityScreenState extends ConsumerState<LiveAirQualityScreen> {
             ],
 
             // Multi-Location Pollution Comparison Table
-            Text(
-              'CROSS-LOCATION POLLUTION COMPARISON',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    letterSpacing: 1.2,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF0D9488),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'CROSS-LOCATION POLLUTION COMPARISON',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            letterSpacing: 1.2,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF0D9488),
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Compare air quality between home, office, and school to time travels safely.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                    ),
+                  ],
+                ),
+                if (aqiState.isComparing)
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else
+                  IconButton(
+                    icon: const Icon(Icons.refresh, size: 20),
+                    tooltip: 'Refresh comparison data',
+                    onPressed: () {
+                      ref.read(airQualityProvider.notifier).loadComparison(locationState.savedLocations);
+                    },
                   ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Compare air quality between home, office, and school to time your travels and protect vulnerable members.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+              ],
             ),
             const SizedBox(height: 12),
 
@@ -366,70 +413,91 @@ class _LiveAirQualityScreenState extends ConsumerState<LiveAirQualityScreen> {
                 itemBuilder: (context, index) {
                   final loc = locationState.savedLocations[index];
                   final isCurrent = loc.id == currentLoc?.id;
-                  // For demo/simulated comparison
-                  final demoData = ref.read(airQualityRepositoryProvider);
 
-                  return FutureBuilder<AirQualityData>(
-                    future: demoData.getAirQuality(loc, demoMode: ref.read(settingsProvider).isDemoMode),
-                    builder: (context, snapshot) {
-                      final itemData = snapshot.data;
-                      return ListTile(
-                        leading: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: itemData != null ? itemData.category.color.withValues(alpha: 0.15) : Colors.grey.shade200,
-                            shape: BoxShape.circle,
+                  // Find data from managed comparison list
+                  AirQualityData? itemData;
+                  for (final item in aqiState.comparisonList) {
+                    if (item.locationName == loc.name ||
+                        ((item.latitude - loc.latitude).abs() < 0.05 &&
+                            (item.longitude - loc.longitude).abs() < 0.05)) {
+                      itemData = item;
+                      break;
+                    }
+                  }
+
+                  // Fallback to active aqiData if this is current location
+                  if (itemData == null && isCurrent && aqiData != null) {
+                    itemData = aqiData;
+                  }
+
+                  final itemCategory = itemData?.getCategory(settings.aqiStandard);
+
+                  return ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: itemCategory != null ? itemCategory.color.withValues(alpha: 0.15) : Colors.grey.shade200,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        loc.tag == LocationTag.home
+                            ? Icons.home
+                            : loc.tag == LocationTag.workplace
+                                ? Icons.business
+                                : Icons.school,
+                        color: itemCategory?.color ?? Colors.grey,
+                        size: 20,
+                      ),
+                    ),
+                    title: Row(
+                      children: [
+                        Text(loc.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(width: 8),
+                        if (isCurrent)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text('ACTIVE', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                           ),
-                          child: Icon(
-                            loc.tag == LocationTag.home
-                                ? Icons.home
-                                : loc.tag == LocationTag.workplace
-                                    ? Icons.business
-                                    : Icons.school,
-                            color: itemData?.category.color ?? Colors.grey,
-                            size: 20,
-                          ),
-                        ),
-                        title: Row(
-                          children: [
-                            Text(loc.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            const SizedBox(width: 8),
-                            if (isCurrent)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: const Text('ACTIVE', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                              ),
-                          ],
-                        ),
-                        subtitle: Text('${loc.tag.label} • ${loc.country}'),
-                        trailing: itemData != null
-                            ? Row(
-                                mainAxisSize: MainAxisSize.min,
+                      ],
+                    ),
+                    subtitle: Text('${loc.tag.label} • ${loc.country}'),
+                    trailing: itemData != null && itemCategory != null
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        '${itemData.aqi} AQI',
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: itemData.category.color),
-                                      ),
-                                      Text('PM2.5: ${itemData.pm25.toStringAsFixed(1)} µg/m³', style: const TextStyle(fontSize: 11)),
-                                    ],
+                                  Text(
+                                    '${itemData.aqi} AQI',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: itemCategory.color,
+                                    ),
                                   ),
-                                  const SizedBox(width: 12),
-                                  AqiBadge(category: itemData.category),
+                                  Text(
+                                    'PM2.5: ${itemData.pm25.toStringAsFixed(1)} µg/m³',
+                                    style: const TextStyle(fontSize: 11),
+                                  ),
                                 ],
-                              )
-                            : const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-                        onTap: () {
-                          ref.read(locationProvider.notifier).selectLocation(loc);
-                        },
-                      );
+                              ),
+                              const SizedBox(width: 12),
+                              AqiBadge(category: itemCategory),
+                            ],
+                          )
+                        : const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                    onTap: () {
+                      ref.read(locationProvider.notifier).selectLocation(loc);
                     },
                   );
                 },

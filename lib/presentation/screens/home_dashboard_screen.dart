@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/utils/pollutant_standards.dart';
 import '../../domain/models/air_quality.dart';
 import '../providers/air_quality_provider.dart';
 import '../providers/household_provider.dart';
@@ -8,6 +9,7 @@ import '../providers/location_provider.dart';
 import '../providers/routine_provider.dart';
 import '../providers/indoor_provider.dart';
 import '../providers/ai_assistant_provider.dart';
+import '../providers/settings_provider.dart';
 import '../widgets/aqi_gauge.dart';
 import '../widgets/pollutant_chip.dart';
 import '../widgets/data_status_indicator.dart';
@@ -23,6 +25,7 @@ class HomeDashboardScreen extends ConsumerWidget {
     final householdProfile = ref.watch(householdProvider);
     final routineState = ref.watch(routineProvider);
     final indoorState = ref.watch(indoorProvider);
+    final settings = ref.watch(settingsProvider);
 
     if (aqiState.isLoading && aqiState.data == null) {
       return const Center(
@@ -57,6 +60,8 @@ class HomeDashboardScreen extends ConsumerWidget {
     }
 
     final impact = routineState.completedImpact;
+    final aqiStandard = settings.aqiStandard;
+    final category = data.getCategory(aqiStandard);
 
     return Scaffold(
       body: RefreshIndicator(
@@ -79,8 +84,11 @@ class HomeDashboardScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
 
-              // Main AQI Gauge & Exposure Hero
-              AqiGauge(airQuality: data),
+              // Main AQI Gauge & Exposure Hero with standard adaptability
+              AqiGauge(
+                airQuality: data,
+                standard: aqiStandard,
+              ),
               const SizedBox(height: 20),
 
               // Weather & Key Atmospheric Conditions
@@ -94,14 +102,14 @@ class HomeDashboardScreen extends ConsumerWidget {
                   final outdoorCard = _buildGuidanceCard(
                     context,
                     title: 'Outdoor Activity Guidance',
-                    content: data.category.outdoorGuidance(),
+                    content: category.outdoorGuidance(),
                     icon: Icons.directions_walk,
-                    iconColor: data.category.color,
+                    iconColor: category.color,
                   );
                   final indoorCard = _buildGuidanceCard(
                     context,
                     title: 'Indoor Air Strategy',
-                    content: data.category.indoorGuidance(),
+                    content: category.indoorGuidance(),
                     icon: Icons.home_work_outlined,
                     iconColor: const Color(0xFF0D9488),
                   );
@@ -174,23 +182,26 @@ class HomeDashboardScreen extends ConsumerWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Checkbox(
-                          value: routine.isCompleted,
-                          onChanged: (val) async {
-                            final completed = val ?? false;
-                            await ref.read(routineProvider.notifier).toggleCompletion(routine.id, completed);
-                            if (completed && context.mounted) {
-                              final explainer = await ref.read(aiAssistantProvider.notifier).getImpactExplanation(
-                                    actionTitle: routine.title,
-                                    co2AvoidedKg: routine.co2AvoidedKg,
-                                    fuelSavedLiters: routine.fuelSavedLiters,
-                                    pm25PreventedGrams: (routine.co2AvoidedKg * 0.012),
-                                  );
-                              if (context.mounted) {
-                                WhyThisMattersDialog.show(context, explainer);
+                        Semantics(
+                          label: 'Mark routine "${routine.title}" as ${routine.isCompleted ? "incomplete" : "completed"}',
+                          child: Checkbox(
+                            value: routine.isCompleted,
+                            onChanged: (val) async {
+                              final completed = val ?? false;
+                              await ref.read(routineProvider.notifier).toggleCompletion(routine.id, completed);
+                              if (completed && context.mounted) {
+                                final explainer = await ref.read(aiAssistantProvider.notifier).getImpactExplanation(
+                                      actionTitle: routine.title,
+                                      co2AvoidedKg: routine.co2AvoidedKg,
+                                      fuelSavedLiters: routine.fuelSavedLiters,
+                                      pm25PreventedGrams: (routine.co2AvoidedKg * 0.012),
+                                    );
+                                if (context.mounted) {
+                                  WhyThisMattersDialog.show(context, explainer);
+                                }
                               }
-                            }
-                          },
+                            },
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -292,9 +303,9 @@ class HomeDashboardScreen extends ConsumerWidget {
                   ),
                 ),
 
-              // Detailed Pollutant Grid
+              // Detailed Pollutant Grid using domain standard utilities
               Text(
-                'SPECIFIC POLLUTANT CONCENTRATIONS',
+                'SPECIFIC POLLUTANT CONCENTRATIONS (${aqiStandard.label})',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       letterSpacing: 1.2,
                       fontWeight: FontWeight.bold,
@@ -318,52 +329,52 @@ class HomeDashboardScreen extends ConsumerWidget {
                     childAspectRatio: constraints.maxWidth > 900 ? 1.15 : 1.45,
                     children: [
                       PollutantMetricCard(
-                        label: 'Fine Particulates',
-                        formula: 'PM2.5',
+                        label: PollutantType.pm25.label,
+                        formula: PollutantType.pm25.formula,
                         value: data.pm25.toStringAsFixed(1),
-                        unit: 'µg/m³',
-                        safetyLimit: '15 µg/m³ (WHO)',
-                        isSafe: data.pm25 <= 15.0,
+                        unit: PollutantType.pm25.unit,
+                        safetyLimit: PollutantStandards.getLimitDescription(PollutantType.pm25, aqiStandard),
+                        isSafe: PollutantStandards.isWithinLimit(PollutantType.pm25, data.pm25, aqiStandard),
                       ),
                       PollutantMetricCard(
-                        label: 'Coarse Dust',
-                        formula: 'PM10',
+                        label: PollutantType.pm10.label,
+                        formula: PollutantType.pm10.formula,
                         value: data.pm10.toStringAsFixed(1),
-                        unit: 'µg/m³',
-                        safetyLimit: '45 µg/m³ (WHO)',
-                        isSafe: data.pm10 <= 45.0,
+                        unit: PollutantType.pm10.unit,
+                        safetyLimit: PollutantStandards.getLimitDescription(PollutantType.pm10, aqiStandard),
+                        isSafe: PollutantStandards.isWithinLimit(PollutantType.pm10, data.pm10, aqiStandard),
                       ),
                       PollutantMetricCard(
-                        label: 'Nitrogen Dioxide',
-                        formula: 'NO2',
+                        label: PollutantType.no2.label,
+                        formula: PollutantType.no2.formula,
                         value: data.no2.toStringAsFixed(1),
-                        unit: 'µg/m³',
-                        safetyLimit: '25 µg/m³',
-                        isSafe: data.no2 <= 25.0,
+                        unit: PollutantType.no2.unit,
+                        safetyLimit: PollutantStandards.getLimitDescription(PollutantType.no2, aqiStandard),
+                        isSafe: PollutantStandards.isWithinLimit(PollutantType.no2, data.no2, aqiStandard),
                       ),
                       PollutantMetricCard(
-                        label: 'Ozone',
-                        formula: 'O3',
+                        label: PollutantType.o3.label,
+                        formula: PollutantType.o3.formula,
                         value: data.o3.toStringAsFixed(1),
-                        unit: 'µg/m³',
-                        safetyLimit: '100 µg/m³',
-                        isSafe: data.o3 <= 100.0,
+                        unit: PollutantType.o3.unit,
+                        safetyLimit: PollutantStandards.getLimitDescription(PollutantType.o3, aqiStandard),
+                        isSafe: PollutantStandards.isWithinLimit(PollutantType.o3, data.o3, aqiStandard),
                       ),
                       PollutantMetricCard(
-                        label: 'Sulfur Dioxide',
-                        formula: 'SO2',
+                        label: PollutantType.so2.label,
+                        formula: PollutantType.so2.formula,
                         value: data.so2.toStringAsFixed(1),
-                        unit: 'µg/m³',
-                        safetyLimit: '40 µg/m³',
-                        isSafe: data.so2 <= 40.0,
+                        unit: PollutantType.so2.unit,
+                        safetyLimit: PollutantStandards.getLimitDescription(PollutantType.so2, aqiStandard),
+                        isSafe: PollutantStandards.isWithinLimit(PollutantType.so2, data.so2, aqiStandard),
                       ),
                       PollutantMetricCard(
-                        label: 'Carbon Monoxide',
-                        formula: 'CO',
+                        label: PollutantType.co.label,
+                        formula: PollutantType.co.formula,
                         value: data.co.toStringAsFixed(0),
-                        unit: 'µg/m³',
-                        safetyLimit: '4000 µg/m³',
-                        isSafe: data.co <= 4000.0,
+                        unit: PollutantType.co.unit,
+                        safetyLimit: PollutantStandards.getLimitDescription(PollutantType.co, aqiStandard),
+                        isSafe: PollutantStandards.isWithinLimit(PollutantType.co, data.co, aqiStandard),
                       ),
                     ],
                   );

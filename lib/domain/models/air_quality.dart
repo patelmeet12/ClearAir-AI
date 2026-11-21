@@ -23,6 +23,18 @@ class HourlyAqiPoint extends Equatable {
     required this.pm25,
   });
 
+  HourlyAqiPoint copyWith({
+    DateTime? time,
+    int? aqi,
+    double? pm25,
+  }) {
+    return HourlyAqiPoint(
+      time: time ?? this.time,
+      aqi: aqi ?? this.aqi,
+      pm25: pm25 ?? this.pm25,
+    );
+  }
+
   Map<String, dynamic> toJson() => {
     'time': time.toIso8601String(),
     'aqi': aqi,
@@ -45,12 +57,12 @@ class AirQualityData extends Equatable {
   final double longitude;
   final int aqi;
   final AqiCategory category;
-  final double pm25; // ug/m3
-  final double pm10; // ug/m3
-  final double no2; // ug/m3
-  final double so2; // ug/m3
-  final double co; // ug/m3
-  final double o3; // ug/m3
+  final double pm25; // µg/m³
+  final double pm10; // µg/m³
+  final double no2; // µg/m³
+  final double so2; // µg/m³
+  final double co; // µg/m³
+  final double o3; // µg/m³
   final double temperatureC;
   final double humidityPercent;
   final double windSpeedKmh;
@@ -81,6 +93,55 @@ class AirQualityData extends Equatable {
     required this.lastUpdated,
     required this.hourlyForecast,
   });
+
+  /// Evaluates the AQI category dynamically under the specified measurement standard.
+  AqiCategory getCategory([AqiStandard standard = AqiStandard.usEpa]) {
+    return AqiScale.categoryForAqi(aqi, standard);
+  }
+
+  AirQualityData copyWith({
+    String? locationName,
+    double? latitude,
+    double? longitude,
+    int? aqi,
+    AqiCategory? category,
+    double? pm25,
+    double? pm10,
+    double? no2,
+    double? so2,
+    double? co,
+    double? o3,
+    double? temperatureC,
+    double? humidityPercent,
+    double? windSpeedKmh,
+    int? weatherCode,
+    DataSourceType? dataSourceType,
+    String? dataSourceName,
+    DateTime? lastUpdated,
+    List<HourlyAqiPoint>? hourlyForecast,
+  }) {
+    return AirQualityData(
+      locationName: locationName ?? this.locationName,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      aqi: aqi ?? this.aqi,
+      category: category ?? this.category,
+      pm25: pm25 ?? this.pm25,
+      pm10: pm10 ?? this.pm10,
+      no2: no2 ?? this.no2,
+      so2: so2 ?? this.so2,
+      co: co ?? this.co,
+      o3: o3 ?? this.o3,
+      temperatureC: temperatureC ?? this.temperatureC,
+      humidityPercent: humidityPercent ?? this.humidityPercent,
+      windSpeedKmh: windSpeedKmh ?? this.windSpeedKmh,
+      weatherCode: weatherCode ?? this.weatherCode,
+      dataSourceType: dataSourceType ?? this.dataSourceType,
+      dataSourceName: dataSourceName ?? this.dataSourceName,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+      hourlyForecast: hourlyForecast ?? this.hourlyForecast,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     'locationName': locationName,

@@ -4,18 +4,23 @@ import '../../domain/models/air_quality.dart';
 
 class AqiGauge extends StatelessWidget {
   final AirQualityData airQuality;
+  final AqiStandard standard;
 
-  const AqiGauge({super.key, required this.airQuality});
+  const AqiGauge({
+    super.key,
+    required this.airQuality,
+    this.standard = AqiStandard.usEpa,
+  });
 
   @override
   Widget build(BuildContext context) {
     final aqi = airQuality.aqi;
-    final category = airQuality.category;
+    final category = airQuality.getCategory(standard);
     final color = category.color;
     final progress = (aqi / 500.0).clamp(0.0, 1.0);
 
     return Semantics(
-      label: 'Air Quality Index gauge showing $aqi, rated ${category.title}',
+      label: 'Air Quality Index gauge showing $aqi on ${standard.label}, rated ${category.title}',
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
@@ -38,13 +43,33 @@ class AqiGauge extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'CURRENT AIR QUALITY',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            letterSpacing: 1.2,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                    Row(
+                      children: [
+                        Text(
+                          'CURRENT AIR QUALITY',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                letterSpacing: 1.2,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                              ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(4),
                           ),
+                          child: Text(
+                            standard.label,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(

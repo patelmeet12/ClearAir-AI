@@ -165,11 +165,14 @@ class IndoorAirScreen extends ConsumerWidget {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Checkbox(
-                            value: item.isCompleted,
-                            onChanged: (val) {
-                              ref.read(indoorProvider.notifier).toggleItem(item.id, val ?? false);
-                            },
+                          Semantics(
+                            label: 'Mark "${item.title}" as ${item.isCompleted ? "incomplete" : "completed"}',
+                            child: Checkbox(
+                              value: item.isCompleted,
+                              onChanged: (val) {
+                                ref.read(indoorProvider.notifier).toggleItem(item.id, val ?? false);
+                              },
+                            ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
