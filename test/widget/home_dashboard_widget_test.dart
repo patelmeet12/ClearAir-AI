@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:clearair_ai/core/constants/aqi_standards.dart';
 import 'package:clearair_ai/domain/models/air_quality.dart';
-import 'package:clearair_ai/presentation/widgets/aqi_gauge.dart';
 import 'package:clearair_ai/presentation/widgets/aqi_badge.dart';
+import 'package:clearair_ai/presentation/widgets/aqi_gauge.dart';
 import 'package:clearair_ai/presentation/widgets/data_status_indicator.dart';
 import 'package:clearair_ai/presentation/widgets/pollutant_chip.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Home Dashboard Widgets Test', () {

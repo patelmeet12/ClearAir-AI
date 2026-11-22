@@ -34,6 +34,16 @@ class ClearAirApp extends ConsumerWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: settings.themeMode,
       routerConfig: appRouter,
+      builder: (context, child) {
+        final mq = MediaQuery.of(context);
+        return MediaQuery(
+          data: mq.copyWith(
+            disableAnimations: settings.reducedMotion,
+            accessibleNavigation: settings.reducedMotion,
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
   }
 }

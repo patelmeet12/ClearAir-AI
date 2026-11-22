@@ -1,9 +1,12 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
+
+import '../../core/utils/app_logger.dart';
 import '../../domain/models/ai_assistant_message.dart';
+import '../../domain/models/ai_impact_explanation.dart';
 import '../../domain/models/air_quality.dart';
 import '../../domain/models/household_profile.dart';
-import '../../domain/models/ai_impact_explanation.dart';
 
 class GeminiAiClient {
   final http.Client _client;
@@ -28,8 +31,8 @@ class GeminiAiClient {
           endpoint: endpoint.trim(),
         );
         if (realAdvice != null) return realAdvice;
-      } catch (_) {
-        // Fallback to deterministic engine on failure
+      } catch (e) {
+        AppLogger.warning('Gemini GenAI request failed. Falling back to deterministic assistant engine.', e);
       }
     }
 

@@ -1,5 +1,5 @@
-import '../models/daily_routine.dart';
 import '../models/air_quality.dart';
+import '../models/daily_routine.dart';
 import '../models/household_profile.dart';
 
 abstract class RoutineRepository {

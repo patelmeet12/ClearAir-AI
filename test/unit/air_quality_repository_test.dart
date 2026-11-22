@@ -1,8 +1,5 @@
 import 'dart:convert';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:clearair_ai/core/constants/aqi_standards.dart';
 import 'package:clearair_ai/data/datasources/local_storage_service.dart';
 import 'package:clearair_ai/data/datasources/open_meteo_aqi_api.dart';
@@ -10,6 +7,10 @@ import 'package:clearair_ai/data/repositories_impl/air_quality_repository_impl.d
 import 'package:clearair_ai/data/repositories_impl/location_repository_impl.dart';
 import 'package:clearair_ai/domain/models/air_quality.dart';
 import 'package:clearair_ai/domain/models/location.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   group('AirQualityRepository & Precedence Fallback Tests', () {

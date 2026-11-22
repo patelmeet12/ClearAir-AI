@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../providers/indoor_provider.dart';
+
 import '../providers/air_quality_provider.dart';
+import '../providers/indoor_provider.dart';
 
 class IndoorAirScreen extends ConsumerWidget {
   const IndoorAirScreen({super.key});
@@ -270,7 +271,7 @@ class IndoorAirScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFilterTrackerCard(BuildContext context, WidgetRef ref, indoorState) {
+  Widget _buildFilterTrackerCard(BuildContext context, WidgetRef ref, IndoorState indoorState) {
     final dateStr = indoorState.lastFilterDate != null
         ? DateFormat('MMM d, yyyy').format(indoorState.lastFilterDate!)
         : 'Not recorded';

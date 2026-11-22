@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../core/constants/aqi_standards.dart';
 import '../../core/errors/api_exception.dart';
+import '../../core/utils/app_logger.dart';
 import '../../core/utils/aqi_calculator.dart';
 import '../../core/utils/pollutant_standards.dart';
 import '../../domain/models/air_quality.dart';
@@ -71,8 +72,8 @@ class OpenMeteoAqiApi {
           humidity = PollutantStandards.sanitize(currentW['relative_humidity_2m'] as num?, defaultValue: 50.0);
           windKmh = PollutantStandards.sanitize(currentW['wind_speed_10m'] as num?, defaultValue: 10.0);
           weatherCode = (currentW['weather_code'] as num?)?.toInt() ?? 0;
-        } catch (_) {
-          // Weather metadata parse non-fatal fallback
+        } catch (e) {
+          AppLogger.warning('Weather metadata parse non-fatal fallback', e);
         }
       }
 
@@ -174,8 +175,8 @@ class OpenMeteoAqiApi {
           );
         }).toList();
       }
-    } catch (_) {
-      // Filter demo locations if offline
+    } catch (e) {
+      AppLogger.warning('Geocoding search network error. Falling back to matching demo locations.', e);
       return DemoDataProvider.defaultDemoLocations
           .where((l) =>
               l.name.toLowerCase().contains(query.toLowerCase()) ||

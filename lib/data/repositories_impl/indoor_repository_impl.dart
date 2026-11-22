@@ -1,5 +1,5 @@
-import '../../domain/models/indoor_guide.dart';
 import '../../domain/models/air_quality.dart';
+import '../../domain/models/indoor_guide.dart';
 import '../../domain/repositories/indoor_repository.dart';
 import '../datasources/local_storage_service.dart';
 

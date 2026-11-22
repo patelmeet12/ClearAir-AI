@@ -283,7 +283,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _confirmReset(BuildContext context) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Confirm Complete Reset'),

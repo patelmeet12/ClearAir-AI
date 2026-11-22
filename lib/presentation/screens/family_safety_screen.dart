@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../domain/models/household_profile.dart';
-import '../providers/household_provider.dart';
 import '../providers/air_quality_provider.dart';
+import '../providers/household_provider.dart';
 
 class FamilySafetyScreen extends ConsumerWidget {
   const FamilySafetyScreen({super.key});

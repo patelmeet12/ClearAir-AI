@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../domain/models/daily_routine.dart';
-import '../providers/routine_provider.dart';
 import '../providers/ai_assistant_provider.dart';
+import '../providers/routine_provider.dart';
 import '../widgets/why_this_matters_dialog.dart';
 
 class DailyRoutinesScreen extends ConsumerWidget {

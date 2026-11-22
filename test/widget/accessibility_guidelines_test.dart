@@ -1,9 +1,18 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'dart:convert';
+
 import 'package:clearair_ai/core/constants/aqi_standards.dart';
+import 'package:clearair_ai/data/datasources/local_storage_service.dart';
 import 'package:clearair_ai/domain/models/air_quality.dart';
+import 'package:clearair_ai/domain/models/app_settings.dart';
+import 'package:clearair_ai/main.dart';
+import 'package:clearair_ai/presentation/providers/app_providers.dart';
+import 'package:clearair_ai/presentation/screens/home_dashboard_screen.dart';
 import 'package:clearair_ai/presentation/widgets/aqi_gauge.dart';
 import 'package:clearair_ai/presentation/widgets/pollutant_chip.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   group('Accessibility & Semantics Verification', () {
@@ -130,6 +139,31 @@ void main() {
       await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
       await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
       handle.dispose();
+    });
+
+    testWidgets('Reduced motion propagates to MediaQuery disableAnimations and accessibleNavigation', (tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      SharedPreferences.setMockInitialValues({
+        'clearair_app_settings': jsonEncode(const AppSettings(reducedMotion: true).toJson()),
+      });
+      final storage = await LocalStorageService.init();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            localStorageServiceProvider.overrideWithValue(storage),
+          ],
+          child: const ClearAirApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(HomeDashboardScreen));
+      expect(MediaQuery.disableAnimationsOf(context), isTrue);
+      expect(MediaQuery.accessibleNavigationOf(context), isTrue);
     });
   });
 }

@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:clearair_ai/core/constants/aqi_standards.dart';
 import 'package:clearair_ai/domain/models/app_settings.dart';
 import 'package:clearair_ai/domain/models/community_challenge.dart';
@@ -8,6 +6,8 @@ import 'package:clearair_ai/domain/models/household_profile.dart';
 import 'package:clearair_ai/domain/models/indoor_guide.dart';
 import 'package:clearair_ai/domain/models/location.dart';
 import 'package:clearair_ai/domain/models/sustainable_alternative.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Domain Models Serialization Tests', () {

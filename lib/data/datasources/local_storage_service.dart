@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/utils/app_logger.dart';
 
 class LocalStorageService {
   final SharedPreferences _prefs;
@@ -28,7 +29,11 @@ class LocalStorageService {
     if (raw == null || raw.isEmpty) return null;
     try {
       return jsonDecode(raw) as Map<String, dynamic>;
-    } catch (_) {
+    } on FormatException catch (e) {
+      AppLogger.warning('Corrupted JSON stored for key "$key"', e);
+      return null;
+    } catch (e) {
+      AppLogger.warning('Error retrieving key "$key"', e);
       return null;
     }
   }
@@ -43,7 +48,11 @@ class LocalStorageService {
     try {
       final decoded = jsonDecode(raw) as List<dynamic>;
       return decoded.map((e) => e as Map<String, dynamic>).toList();
-    } catch (_) {
+    } on FormatException catch (e) {
+      AppLogger.warning('Corrupted JSON list stored for key "$key"', e);
+      return null;
+    } catch (e) {
+      AppLogger.warning('Error retrieving list key "$key"', e);
       return null;
     }
   }

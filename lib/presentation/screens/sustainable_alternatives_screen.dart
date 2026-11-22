@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/sustainable_provider.dart';
+
 import '../providers/ai_assistant_provider.dart';
+import '../providers/sustainable_provider.dart';
 import '../widgets/why_this_matters_dialog.dart';
 
 class SustainableAlternativesScreen extends ConsumerWidget {

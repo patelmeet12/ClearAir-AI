@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../core/utils/pollutant_standards.dart';
-import '../../domain/models/air_quality.dart';
+import '../providers/ai_assistant_provider.dart';
 import '../providers/air_quality_provider.dart';
 import '../providers/household_provider.dart';
+import '../providers/indoor_provider.dart';
 import '../providers/location_provider.dart';
 import '../providers/routine_provider.dart';
-import '../providers/indoor_provider.dart';
-import '../providers/ai_assistant_provider.dart';
 import '../providers/settings_provider.dart';
 import '../widgets/aqi_gauge.dart';
-import '../widgets/pollutant_chip.dart';
+import '../widgets/atmospheric_conditions_bar.dart';
 import '../widgets/data_status_indicator.dart';
+import '../widgets/family_safety_banner.dart';
+import '../widgets/guidance_card.dart';
+import '../widgets/impact_summary_card.dart';
+import '../widgets/pollutant_chip.dart';
 import '../widgets/why_this_matters_dialog.dart';
 
 class HomeDashboardScreen extends ConsumerWidget {
@@ -92,22 +96,20 @@ class HomeDashboardScreen extends ConsumerWidget {
               const SizedBox(height: 20),
 
               // Weather & Key Atmospheric Conditions
-              _buildAtmosphericBar(context, data),
+              AtmosphericConditionsBar(airQuality: data),
               const SizedBox(height: 20),
 
               // Outdoor Activity & Indoor Protection Guidance Cards
               LayoutBuilder(
                 builder: (context, constraints) {
                   final isWide = constraints.maxWidth > 700;
-                  final outdoorCard = _buildGuidanceCard(
-                    context,
+                  final outdoorCard = GuidanceCard(
                     title: 'Outdoor Activity Guidance',
                     content: category.outdoorGuidance(),
                     icon: Icons.directions_walk,
                     iconColor: category.color,
                   );
-                  final indoorCard = _buildGuidanceCard(
-                    context,
+                  final indoorCard = GuidanceCard(
                     title: 'Indoor Air Strategy',
                     content: category.indoorGuidance(),
                     icon: Icons.home_work_outlined,
@@ -137,13 +139,16 @@ class HomeDashboardScreen extends ConsumerWidget {
 
               // Family Vulnerability Alert (if sensitive members present)
               if (householdProfile.hasSensitiveMembers)
-                _buildFamilySafetyBanner(context, householdProfile, data),
+                FamilySafetyBanner(householdProfile: householdProfile),
 
               const SizedBox(height: 24),
 
               // Today's Recommended Actions (Personal Routine)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,94 +204,94 @@ class HomeDashboardScreen extends ConsumerWidget {
                 )
               else
                 ...routineState.routines.take(3).map((routine) {
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Semantics(
-                          label: 'Mark routine "${routine.title}" as ${routine.isCompleted ? "incomplete" : "completed"}',
-                          child: Checkbox(
-                            value: routine.isCompleted,
-                            onChanged: (val) async {
-                              final completed = val ?? false;
-                              await ref.read(routineProvider.notifier).toggleCompletion(routine.id, completed);
-                              if (completed && context.mounted) {
-                                final explainer = await ref.read(aiAssistantProvider.notifier).getImpactExplanation(
-                                      actionTitle: routine.title,
-                                      co2AvoidedKg: routine.co2AvoidedKg,
-                                      fuelSavedLiters: routine.fuelSavedLiters,
-                                      pm25PreventedGrams: (routine.co2AvoidedKg * 0.012),
-                                    );
-                                if (context.mounted) {
-                                  WhyThisMattersDialog.show(context, explainer);
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Semantics(
+                            label: 'Mark routine "${routine.title}" as ${routine.isCompleted ? "incomplete" : "completed"}',
+                            child: Checkbox(
+                              value: routine.isCompleted,
+                              onChanged: (val) async {
+                                final completed = val ?? false;
+                                await ref.read(routineProvider.notifier).toggleCompletion(routine.id, completed);
+                                if (completed && context.mounted) {
+                                  final explainer = await ref.read(aiAssistantProvider.notifier).getImpactExplanation(
+                                        actionTitle: routine.title,
+                                        co2AvoidedKg: routine.co2AvoidedKg,
+                                        fuelSavedLiters: routine.fuelSavedLiters,
+                                        pm25PreventedGrams: (routine.co2AvoidedKg * 0.012),
+                                      );
+                                  if (context.mounted) {
+                                    WhyThisMattersDialog.show(context, explainer);
+                                  }
                                 }
-                              }
-                            },
+                              },
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      routine.timeSlot.label,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).colorScheme.primary,
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        routine.timeSlot.label,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(context).colorScheme.primary,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    routine.suggestedTime,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      routine.suggestedTime,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                routine.title,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  decoration: routine.isCompleted ? TextDecoration.lineThrough : null,
+                                  ],
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                routine.reason,
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                                    ),
-                              ),
-                            ],
+                                const SizedBox(height: 6),
+                                Text(
+                                  routine.title,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    decoration: routine.isCompleted ? TextDecoration.lineThrough : null,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  routine.reason,
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                                      ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                }),
               const SizedBox(height: 20),
 
               // Environmental Impact of Completed Actions
-              _buildImpactSummaryCard(context, impact, routineState.completedCount),
+              ImpactSummaryCard(impact: impact, count: routineState.completedCount),
               const SizedBox(height: 24),
 
               // Indoor Filter Maintenance Alert
@@ -408,193 +413,6 @@ class HomeDashboardScreen extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildAtmosphericBar(BuildContext context, AirQualityData data) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.grey.shade300),
-      ),
-      child: Row(
-        children: [
-          Expanded(child: _weatherItem(context, Icons.thermostat, '${data.temperatureC.toStringAsFixed(1)}°C', 'Temp')),
-          Expanded(child: _weatherItem(context, Icons.water_drop_outlined, '${data.humidityPercent.toStringAsFixed(0)}%', 'Humidity')),
-          Expanded(child: _weatherItem(context, Icons.air, '${data.windSpeedKmh.toStringAsFixed(1)} km/h', 'Wind')),
-          Expanded(
-            child: _weatherItem(
-              context,
-              data.weatherCode == 45 ? Icons.foggy : Icons.wb_sunny_outlined,
-              data.weatherCode == 45 ? 'Smog/Fog' : 'Fair',
-              'Sky',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _weatherItem(BuildContext context, IconData icon, String val, String title) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 20, color: const Color(0xFF0D9488)),
-        const SizedBox(height: 4),
-        Text(val, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        Text(title, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
-      ],
-    );
-  }
-
-  Widget _buildGuidanceCard(
-    BuildContext context, {
-    required String title,
-    required String content,
-    required IconData icon,
-    required Color iconColor,
-  }) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: iconColor, size: 24),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    content,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.35),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFamilySafetyBanner(BuildContext context, householdProfile, AirQualityData data) {
-    final childrenText = householdProfile.children == 1 ? '1 child' : '${householdProfile.children} children';
-    final adultsText = householdProfile.olderAdults == 1 ? '1 older adult' : '${householdProfile.olderAdults} older adults';
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0D9488).withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.family_restroom, color: Color(0xFF0D9488), size: 28),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Household Vulnerability Advisory Active',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Profile includes $childrenText and $adultsText. '
-                  '${householdProfile.vulnerability.advisory}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.35),
-                ),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: () => context.go('/family'),
-            child: const Text('Edit Household'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildImpactSummaryCard(BuildContext context, impact, int count) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF0D9488).withValues(alpha: 0.15),
-            const Color(0xFF10B981).withValues(alpha: 0.08),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 8,
-            runSpacing: 4,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.eco, color: Color(0xFF10B981), size: 20),
-                  const SizedBox(width: 6),
-                  Text(
-                    'ESTIMATED IMPACT ($count ACTIONS)',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.8),
-                  ),
-                ],
-              ),
-              Text(
-                'Transparent Model',
-                style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(child: _impactMetric(context, '${impact.co2AvoidedKg.toStringAsFixed(2)} kg', 'CO2e Avoided')),
-              Expanded(child: _impactMetric(context, '${impact.fuelSavedLiters.toStringAsFixed(2)} L', 'Fuel Saved')),
-              Expanded(child: _impactMetric(context, '\$${impact.costSavedUsd.toStringAsFixed(2)}', 'Money Saved')),
-              Expanded(child: _impactMetric(context, '${(impact.pm25PreventedGrams * 1000).toStringAsFixed(0)} mg', 'PM2.5 Prevented')),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _impactMetric(BuildContext context, String value, String label) {
-    return Column(
-      children: [
-        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0D9488))),
-        const SizedBox(height: 2),
-        Text(label, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
-      ],
     );
   }
 }

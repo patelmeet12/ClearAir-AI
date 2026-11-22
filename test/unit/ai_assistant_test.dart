@@ -1,8 +1,8 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:clearair_ai/core/constants/aqi_standards.dart';
 import 'package:clearair_ai/data/datasources/gemini_ai_client.dart';
 import 'package:clearair_ai/domain/models/air_quality.dart';
 import 'package:clearair_ai/domain/models/household_profile.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('GeminiAiClient & Deterministic Assistant Tests', () {

@@ -1,9 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../data/datasources/gemini_ai_client.dart';
 import '../../data/datasources/local_storage_service.dart';
 import '../../data/datasources/open_meteo_aqi_api.dart';
-import '../../data/repositories_impl/air_quality_repository_impl.dart';
 import '../../data/repositories_impl/ai_assistant_repository_impl.dart';
+import '../../data/repositories_impl/air_quality_repository_impl.dart';
 import '../../data/repositories_impl/community_repository_impl.dart';
 import '../../data/repositories_impl/household_repository_impl.dart';
 import '../../data/repositories_impl/indoor_repository_impl.dart';
@@ -11,8 +12,8 @@ import '../../data/repositories_impl/location_repository_impl.dart';
 import '../../data/repositories_impl/routine_repository_impl.dart';
 import '../../data/repositories_impl/settings_repository_impl.dart';
 import '../../data/repositories_impl/sustainable_repository_impl.dart';
-import '../../domain/repositories/air_quality_repository.dart';
 import '../../domain/repositories/ai_assistant_repository.dart';
+import '../../domain/repositories/air_quality_repository.dart';
 import '../../domain/repositories/community_repository.dart';
 import '../../domain/repositories/household_repository.dart';
 import '../../domain/repositories/indoor_repository.dart';

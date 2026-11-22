@@ -1,8 +1,9 @@
 import 'package:uuid/uuid.dart';
+
 import '../../domain/models/ai_assistant_message.dart';
+import '../../domain/models/ai_impact_explanation.dart';
 import '../../domain/models/air_quality.dart';
 import '../../domain/models/household_profile.dart';
-import '../../domain/models/ai_impact_explanation.dart';
 import '../../domain/repositories/ai_assistant_repository.dart';
 import '../datasources/gemini_ai_client.dart';
 import '../datasources/local_storage_service.dart';

@@ -1,5 +1,5 @@
-import '../models/indoor_guide.dart';
 import '../models/air_quality.dart';
+import '../models/indoor_guide.dart';
 
 abstract class IndoorRepository {
   Future<List<IndoorChecklistItem>> getIndoorChecklist(AirQualityData? currentAqi);

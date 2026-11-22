@@ -1,7 +1,7 @@
 import '../models/ai_assistant_message.dart';
+import '../models/ai_impact_explanation.dart';
 import '../models/air_quality.dart';
 import '../models/household_profile.dart';
-import '../models/ai_impact_explanation.dart';
 
 abstract class AiAssistantRepository {
   Future<List<AiAssistantMessage>> getConversationHistory();

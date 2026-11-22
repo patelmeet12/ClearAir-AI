@@ -1,9 +1,10 @@
+import '../../core/utils/app_logger.dart';
 import '../../domain/models/air_quality.dart';
 import '../../domain/models/location.dart';
 import '../../domain/repositories/air_quality_repository.dart';
-import '../datasources/open_meteo_aqi_api.dart';
 import '../datasources/demo_data_provider.dart';
 import '../datasources/local_storage_service.dart';
+import '../datasources/open_meteo_aqi_api.dart';
 
 class AirQualityRepositoryImpl implements AirQualityRepository {
   final OpenMeteoAqiApi _api;
@@ -40,8 +41,8 @@ class AirQualityRepositoryImpl implements AirQualityRepository {
               dataSourceName: '${cachedData.dataSourceName} (Cached)',
             );
           }
-        } catch (_) {
-          // Invalid cached format: proceed to fetch fresh
+        } catch (e) {
+          AppLogger.warning('Failed to parse cached air quality data for ${location.name}', e);
         }
       }
     }
@@ -53,7 +54,9 @@ class AirQualityRepositoryImpl implements AirQualityRepository {
         await _storage.setJson(cacheKey, fresh.toJson());
       }
       return fresh;
-    } catch (_) {
+    } catch (e) {
+      AppLogger.warning('Live telemetry fetch failed for ${location.name}. Attempting cache fallback.', e);
+
       // 3. Fallback to offline cache if network call fails
       final cachedJson = _storage.getJson(cacheKey);
       if (cachedJson != null) {
@@ -63,10 +66,13 @@ class AirQualityRepositoryImpl implements AirQualityRepository {
             dataSourceType: DataSourceType.cached,
             dataSourceName: '${cachedData.dataSourceName} (Offline Cache)',
           );
-        } catch (_) {}
+        } catch (cacheParseError) {
+          AppLogger.warning('Corrupted offline cache for ${location.name}', cacheParseError);
+        }
       }
 
       // 4. Final fallback to deterministic demo dataset if no cache exists
+      AppLogger.info('Using fallback demo dataset for ${location.name}');
       return DemoDataProvider.getDemoAirQuality(location);
     }
   }

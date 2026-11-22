@@ -1,6 +1,6 @@
+import '../../core/utils/impact_calculator.dart';
 import '../../domain/models/sustainable_alternative.dart';
 import '../../domain/repositories/sustainable_repository.dart';
-import '../../core/utils/impact_calculator.dart';
 import '../datasources/local_storage_service.dart';
 
 class SustainableRepositoryImpl implements SustainableRepository {

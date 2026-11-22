@@ -1,14 +1,17 @@
 import 'dart:math' as math;
+
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+
 import '../../domain/models/air_quality.dart';
 import '../../domain/models/location.dart';
 import '../providers/air_quality_provider.dart';
 import '../providers/app_providers.dart';
 import '../providers/location_provider.dart';
 import '../providers/settings_provider.dart';
+import '../widgets/add_location_dialog.dart';
 import '../widgets/aqi_badge.dart';
 
 class LiveAirQualityScreen extends ConsumerStatefulWidget {
@@ -81,8 +84,11 @@ class _LiveAirQualityScreenState extends ConsumerState<LiveAirQualityScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Screen Title & Search Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 16,
+              runSpacing: 12,
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,7 +110,7 @@ class _LiveAirQualityScreenState extends ConsumerState<LiveAirQualityScreen> {
                   ],
                 ),
                 ElevatedButton.icon(
-                  onPressed: () => _showAddLocationDialog(context),
+                  onPressed: () => AddLocationDialog.show(context),
                   icon: const Icon(Icons.add_location_alt_outlined),
                   label: const Text('Add Saved Location'),
                 ),
@@ -366,26 +372,29 @@ class _LiveAirQualityScreenState extends ConsumerState<LiveAirQualityScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'CROSS-LOCATION POLLUTION COMPARISON',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            letterSpacing: 1.2,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF0D9488),
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Compare air quality between home, office, and school to time travels safely.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                          ),
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'CROSS-LOCATION POLLUTION COMPARISON',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              letterSpacing: 1.2,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF0D9488),
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Compare air quality between home, office, and school to time travels safely.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                            ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 12),
                 if (aqiState.isComparing)
                   const SizedBox(
                     width: 18,
@@ -502,98 +511,6 @@ class _LiveAirQualityScreenState extends ConsumerState<LiveAirQualityScreen> {
                   );
                 },
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showAddLocationDialog(BuildContext context) {
-    final nameCtrl = TextEditingController();
-    final countryCtrl = TextEditingController();
-    final latCtrl = TextEditingController();
-    final lonCtrl = TextEditingController();
-    LocationTag selectedTag = LocationTag.home;
-
-    showDialog(
-      context: context,
-      builder: (dialogCtx) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Add Saved Location'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Location Name (e.g. South Delhi, Downtown)'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: countryCtrl,
-                  decoration: const InputDecoration(labelText: 'Country / Region'),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: latCtrl,
-                        decoration: const InputDecoration(labelText: 'Latitude (e.g. 28.613)'),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: lonCtrl,
-                        decoration: const InputDecoration(labelText: 'Longitude (e.g. 77.209)'),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<LocationTag>(
-                  initialValue: selectedTag,
-                  decoration: const InputDecoration(labelText: 'Household Category Tag'),
-                  items: LocationTag.values.map((tag) {
-                    return DropdownMenuItem(value: tag, child: Text(tag.label));
-                  }).toList(),
-                  onChanged: (val) {
-                    if (val != null) setDialogState(() => selectedTag = val);
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final name = nameCtrl.text.trim();
-                final country = countryCtrl.text.trim();
-                final lat = double.tryParse(latCtrl.text.trim()) ?? 0.0;
-                final lon = double.tryParse(lonCtrl.text.trim()) ?? 0.0;
-
-                if (name.isNotEmpty) {
-                  final newLoc = LocationItem(
-                    id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
-                    name: name,
-                    country: country,
-                    latitude: lat,
-                    longitude: lon,
-                    tag: selectedTag,
-                  );
-                  ref.read(locationProvider.notifier).addOrUpdateLocation(newLoc);
-                  Navigator.of(dialogCtx).pop();
-                }
-              },
-              child: const Text('Save Location'),
             ),
           ],
         ),

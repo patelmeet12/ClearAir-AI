@@ -1,11 +1,12 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart';
+
 import '../providers/air_quality_provider.dart';
-import '../providers/routine_provider.dart';
 import '../providers/indoor_provider.dart';
+import '../providers/routine_provider.dart';
 import '../providers/sustainable_provider.dart';
+import '../widgets/export_summary_dialog.dart';
 
 class InsightsReportsScreen extends ConsumerWidget {
   const InsightsReportsScreen({super.key});
@@ -47,7 +48,13 @@ class InsightsReportsScreen extends ConsumerWidget {
                   ],
                 ),
                 ElevatedButton.icon(
-                  onPressed: () => _showExportSummaryDialog(context, aqiData, routineState, indoorState, sustState),
+                  onPressed: () => ExportSummaryDialog.show(
+                    context: context,
+                    aqiData: aqiData,
+                    routineState: routineState,
+                    indoorState: indoorState,
+                    sustState: sustState,
+                  ),
                   icon: const Icon(Icons.file_download_outlined, size: 18),
                   label: const Text('Export Summary'),
                 ),
@@ -289,70 +296,6 @@ class InsightsReportsScreen extends ConsumerWidget {
         const SizedBox(height: 4),
         Text(desc, style: const TextStyle(fontSize: 13, height: 1.35)),
       ],
-    );
-  }
-
-  void _showExportSummaryDialog(BuildContext context, aqiData, routineState, indoorState, sustState) {
-    final nowStr = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now());
-    final summaryText = '''
-========================================
-CLEARAIR AI — PERSONAL CLEAN AIR SUMMARY
-Generated: $nowStr
-Location: ${aqiData?.locationName ?? "Local"}
-Current AQI: ${aqiData?.aqi ?? 150} (${aqiData?.category.title ?? "Poor"})
-PM2.5: ${aqiData?.pm25.toStringAsFixed(1) ?? "N/A"} µg/m³
-PM10: ${aqiData?.pm10.toStringAsFixed(1) ?? "N/A"} µg/m³
-Data Source: ${aqiData?.dataSourceName ?? "ClearAir Local"}
-----------------------------------------
-DAILY ROUTINE PROGRESS:
-Completed: ${routineState.completedCount} / ${routineState.routines.length} (${(routineState.completionRate * 100).toInt()}%)
-CO2e Avoided Today: ${routineState.completedImpact.co2AvoidedKg.toStringAsFixed(2)} kg
-Fuel Saved Today: ${routineState.completedImpact.fuelSavedLiters.toStringAsFixed(2)} L
-----------------------------------------
-INDOOR AIR QUALITY CHECKLIST:
-Protection Score: ${(indoorState.completionRate * 100).toInt()}%
-Filter Replacement Due: ${indoorState.isFilterReplacementDue ? "YES (Overdue)" : "NO (Clean)"}
-----------------------------------------
-MONTHLY SUSTAINABILITY ADOPTION:
-Adopted Routines: ${sustState.adoptedCount}
-Estimated Monthly CO2e Benefit: ${sustState.personalImpact.co2AvoidedKg.toStringAsFixed(1)} kg
-Estimated Monthly Cost Savings: \$${sustState.personalImpact.costSavedUsd.toStringAsFixed(0)}
-----------------------------------------
-DISCLAIMER:
-Environmental protection guidance only — not clinical medical advice.
-========================================
-''';
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('ClearAir Environmental Report'),
-        content: SizedBox(
-          width: 500,
-          child: SingleChildScrollView(
-            child: SelectableText(
-              summaryText,
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Close'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Report copied and ready to share!')),
-              );
-            },
-            icon: const Icon(Icons.copy, size: 16),
-            label: const Text('Copy to Clipboard'),
-          ),
-        ],
-      ),
     );
   }
 }
