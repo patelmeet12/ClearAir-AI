@@ -87,7 +87,15 @@ class OpenMeteoAqiApi {
       // Extract or compute US AQI
       int aqi = (currentAqi['us_aqi'] as num?)?.toInt() ?? 0;
       if (aqi <= 0) {
-        aqi = AqiCalculator.calculateAqi(pm25: pm25, pm10: pm10, standard: AqiStandard.usEpa);
+        aqi = AqiCalculator.calculateAqi(
+          pm25: pm25,
+          pm10: pm10,
+          no2: no2,
+          so2: so2,
+          co: co,
+          o3: o3,
+          standard: AqiStandard.usEpa,
+        );
       }
 
       // Parse hourly forecast

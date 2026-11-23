@@ -61,6 +61,57 @@ void main() {
         standard: AqiStandard.indiaNaqi,
       );
       expect(aqiNaqi, equals(200));
+
+      // Case 4: NO2 is the dominant pollutant under EPA standard
+      final aqiNo2 = AqiCalculator.calculateAqi(
+        pm25: 10.0, // US AQI ~ 42
+        no2: 676.0, // US AQI = 150
+        standard: AqiStandard.usEpa,
+      );
+      expect(aqiNo2, equals(150));
+
+      // Case 5: O3 is the dominant pollutant under India NAQI standard
+      final aqiO3 = AqiCalculator.calculateAqi(
+        pm25: 25.0, // CPCB NAQI ~ 42
+        o3: 208.0, // CPCB NAQI = 300
+        standard: AqiStandard.indiaNaqi,
+      );
+      expect(aqiO3, equals(300));
+    });
+
+    test('Calculates NO2, SO2, CO, and O3 sub-indices across US EPA and India NAQI', () {
+      // US EPA NO2
+      expect(AqiCalculator.no2ToUsAqi(100.0), equals(50));
+      expect(AqiCalculator.no2ToUsAqi(188.0), equals(100));
+
+      // US EPA SO2
+      expect(AqiCalculator.so2ToUsAqi(92.0), equals(50));
+      expect(AqiCalculator.so2ToUsAqi(196.0), equals(100));
+
+      // US EPA CO
+      expect(AqiCalculator.coToUsAqi(5000.0), equals(50));
+      expect(AqiCalculator.coToUsAqi(10760.0), equals(100));
+
+      // US EPA O3
+      expect(AqiCalculator.o3ToUsAqi(106.0), equals(50));
+      expect(AqiCalculator.o3ToUsAqi(137.0), equals(100));
+
+      // India NAQI NO2
+      expect(AqiCalculator.no2ToIndiaNaqi(40.0), equals(50));
+      expect(AqiCalculator.no2ToIndiaNaqi(80.0), equals(100));
+      expect(AqiCalculator.no2ToIndiaNaqi(180.0), equals(200));
+
+      // India NAQI SO2
+      expect(AqiCalculator.so2ToIndiaNaqi(40.0), equals(50));
+      expect(AqiCalculator.so2ToIndiaNaqi(80.0), equals(100));
+
+      // India NAQI CO
+      expect(AqiCalculator.coToIndiaNaqi(1000.0), equals(50));
+      expect(AqiCalculator.coToIndiaNaqi(2000.0), equals(100));
+
+      // India NAQI O3
+      expect(AqiCalculator.o3ToIndiaNaqi(50.0), equals(50));
+      expect(AqiCalculator.o3ToIndiaNaqi(100.0), equals(100));
     });
 
     test('Boundary conditions and malformed inputs are guarded against crashes', () {

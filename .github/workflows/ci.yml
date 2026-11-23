@@ -1,0 +1,34 @@
+name: ClearAir AI CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verify:
+    name: Lint, Test & Build Web
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify static analysis
+        run: flutter analyze --fatal-infos
+
+      - name: Run test suite with coverage
+        run: flutter test --coverage
+
+      - name: Build web application
+        run: flutter build web --release --no-tree-shake-icons

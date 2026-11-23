@@ -43,5 +43,6 @@ Transparency is central to ClearAir AI. Every dataset displayed is badged with a
 1. **Contrast Ratios**: All body text maintains a contrast ratio >= 4.5:1 against card backgrounds; large headers maintain >= 3.0:1.
 2. **Screen Reader Semantics**: Key visual widgets (`AqiGauge`, `AqiBadge`, `PollutantMetricCard`) are wrapped in `Semantics` widgets providing clear spoken summaries (e.g., *"Air Quality Index gauge showing 382, rated Severe. Extreme Toxic Smog Exposure"*).
 3. **Keyboard Navigability**: All interactive buttons, checkboxes, text fields, and chips are fully navigable with standard focus traversal.
-4. **Reduced Motion Toggle**: Available in Settings, allowing users sensitive to vestibular motion to disable transitions and animated progress bars.
+4. **Reduced Motion System Propagation (WCAG 2.2 AA Criterion 2.3.3)**: Available in Settings. Toggling reduced motion overrides `disableAnimations: true` and `accessibleNavigation: true` on the root `MediaQuery` in `ClearAirApp.builder`, suppressing transitions, ticker animations, and progress bar motions app-wide.
 5. **Touch Targets**: All actionable buttons and form inputs meet or exceed the standard 44x44 dp minimum touch target dimensions.
+6. **Responsive Layout Resilience**: Screen titles and action headers utilize responsive `Wrap` and `Expanded` constructs, completely preventing horizontal RenderFlex overflow exceptions across mobile, tablet, and ultra-wide viewports.

@@ -26,7 +26,7 @@ ClearAir AI is a production-grade, GenAI-powered web application built with Flut
 
 ### Prerequisites
 
-- Flutter SDK (v3.24+ recommended, tested on Flutter 3.38 / Dart 3.10)
+- Flutter SDK (v3.24+ recommended, tested on Flutter 3.29 / Dart 3.8)
 - Google Chrome or any modern Chromium/WebKit browser
 
 ### Installation & Run
@@ -41,33 +41,43 @@ ClearAir AI is a production-grade, GenAI-powered web application built with Flut
    flutter pub get
    ```
 
-3. Run the application in Chrome:
+3. Run static analysis with fatal warnings:
+   ```bash
+   flutter analyze --fatal-infos
+   ```
+
+4. Run the application in Chrome:
    ```bash
    flutter run -d chrome
    ```
 
-4. Run all automated tests:
+5. Run all 56 automated tests with coverage:
    ```bash
-   flutter test
+   flutter test --coverage
    ```
 
-5. Build for production web deployment:
+6. Build for production web deployment:
    ```bash
-   flutter build web --release
+   flutter build web --release --no-tree-shake-icons
    ```
 
 ---
 
 ## 🛠️ Technology Stack & Architecture
 
-- **Framework**: Flutter Web (CanvasKit / HTML renderer) & Dart
+- **Framework**: Flutter Web (CanvasKit / Wasm / HTML renderer) & Dart
 - **Design System**: Material 3 with custom Deep Navy, Clean White, and Teal/Emerald palette
-- **State Management**: Riverpod (`flutter_riverpod: ^2.6.1`)
-- **Navigation**: GoRouter (`go_router: ^14.8.1`) with `StatefulShellRoute`
-- **Data Persistence**: `SharedPreferences` (lightweight, zero unnecessary backend overhead)
+- **State Management**: Riverpod (`flutter_riverpod: ^2.5.1`)
+- **Navigation**: GoRouter (`go_router: ^14.2.0`) with `StatefulShellRoute`
+- **Data Persistence**: `SharedPreferences` (`shared_preferences: ^2.2.3`)
 - **Live Atmospheric API**: Open-Meteo Air Quality & Weather API (Open data, zero API key required)
+- **Networking**: `http: ^1.2.1` with timeout guards and `AppLogger` fallbacks
 - **Charts**: `fl_chart: ^0.68.0` for 24-hour diurnal forecasts and weekly trends
+- **Value Equality & Identifiers**: `equatable: ^2.0.5`, `uuid: ^4.4.0`
+- **Date & Number Formatting**: `intl: ^0.19.0`
 - **GenAI Client**: Gemini 1.5 Flash API connector with deterministic local rule-based fallback
+- **CI/CD**: GitHub Actions workflow in [`.github/workflows/ci.yml`](./.github/workflows/ci.yml)
+- **Accessibility**: WCAG 2.2 AA compliant with root `MediaQuery` reduced-motion propagation and screen-reader semantics
 
 ---
 

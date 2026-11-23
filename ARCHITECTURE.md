@@ -60,7 +60,9 @@ lib/
 │   │   ├── app_colors.dart         # Contrast-verified palette for EPA AQI tiers
 │   │   └── app_theme.dart          # Light and Deep Navy Dark Material 3 theme definitions
 │   └── utils/
-│       ├── aqi_calculator.dart     # US EPA piecewise linear interpolation from PM2.5
+│       ├── aqi_calculator.dart     # US EPA & India NAQI piecewise linear interpolation across 6 pollutants
+│       ├── pollutant_standards.dart# Centralized WHO, US EPA & India CPCB limits & data sanitization
+│       ├── app_logger.dart         # Structured production logging avoiding silent error swallowing
 │       └── impact_calculator.dart  # Net emissions, fuel, cost & particulate calculations
 ├── domain/
 │   ├── models/                     # Immutable value objects (AirQuality, Routine, Household...)
@@ -74,7 +76,15 @@ lib/
 │   └── repositories_impl/          # Concrete implementations binding datasources to domain
 ├── presentation/
 │   ├── providers/                  # Riverpod StateNotifierProviders for all UI state
-│   ├── widgets/                    # Reusable atomic UI components (AqiGauge, PollutantCard...)
+│   ├── widgets/                    # Reusable atomic UI components (AqiGauge, GuidanceCard, FamilySafetyBanner...)
+│   │   ├── atmospheric_conditions_bar.dart # Weather & atmospheric metrics bar
+│   │   ├── guidance_card.dart              # Reusable outdoor and indoor strategy cards
+│   │   ├── family_safety_banner.dart       # Dynamic vulnerability alert banner
+│   │   ├── impact_summary_card.dart        # Transparent carbon/fuel impact metrics grid
+│   │   ├── add_location_dialog.dart        # Self-contained validated modal dialog
+│   │   ├── export_summary_dialog.dart      # Formatted report preview and export dialog
+│   │   ├── aqi_gauge.dart                  # Accessible radial AQI gauge with semantics
+│   │   └── pollutant_chip.dart             # Accessible pollutant metric cards
 │   └── screens/                    # 10 comprehensive dashboard view screens
 └── main.dart                       # App initialization & root ProviderScope binding
 ```
